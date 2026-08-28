@@ -40,9 +40,14 @@ try {
         exit;
     }
 
-    router−>dispatch(router->dispatch(router−>dispatch(update);
+    $router->dispatch($update);
 } catch (\Throwable $e) {
-    error_log('INDEX FATAL: ' . e−>getMessage().′@′.e->getMessage() . ' @ ' .e−>getMessage().′@′.e->getFile() . ':' . $e->getLine());
+    error_log(
+        'INDEX FATAL: '
+        . $e->getMessage() . ' @ '
+        . $e->getFile() . ':'
+        . $e->getLine()
+    );
 }
 
 http_response_code(200);

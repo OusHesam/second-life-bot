@@ -19,10 +19,16 @@ require ROOT . '/src/Router.php';
 require ROOT . '/src/Handler.php';
 
 spl_autoload_register(function (string $class): void {
-    if (!str_starts_with($class, 'App\\')) return;
-    path=ROOT.′/src/′.strreplace(′′,′/′,substr(path = ROOT . '/src/' . str_replace('\\', '/', substr(path=ROOT.′/src/′.strr​eplace(′′,′/′,substr(class, 4)) . '.php';
-    if (file_exists(path))requirepath)) requirepath))requirepath;
-    else error_log("AUTOLOAD MISSING: $class");
+    if (!str_starts_with($class, 'App\\')) {
+        return;
+    }
+
+    $path = ROOT . '/src/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+    if (file_exists($path)) {
+        require $path;
+    } else {
+        error_log("AUTOLOAD MISSING: $class");
+    }
 });
 
 try {

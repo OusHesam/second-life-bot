@@ -3,13 +3,17 @@ namespace App;
 
 final class Telegram
 {
-    public static function api(string method,arraymethod, arraymethod,arrayparams = []): ?array
+    public static function api(string $method, array $params = []): ?array
     {
         $token = Config::get('BOT_TOKEN');
-        if (!$token) { error_log('TELEGRAM: no BOT_TOKEN'); return null; }
+        if (!$token) {
+            error_log('TELEGRAM: no BOT_TOKEN');
+            return null;
+        }
 
-        url="https://api.telegram.org/boturl = "https://api.telegram.org/boturl="https://api.telegram.org/bottoken/$method";
-        ch=curlinit(ch = curl_init(ch=curli​nit(url);
+        $url = "https://api.telegram.org/bot{$token}/{$method}";
+        $ch = curl_init($url);
+
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -18,42 +22,74 @@ final class Telegram
             CURLOPT_TIMEOUT => 10,
             CURLOPT_CONNECTTIMEOUT => 5,
         ]);
-        res=curlexec(res = curl_exec(res=curle​xec(ch);
+
+        $res = curl_exec($ch);
         if ($res === false) {
             error_log('TELEGRAM CURL ERR: ' . curl_error($ch));
             curl_close($ch);
             return null;
         }
+
         curl_close($ch);
-        json=jsondecode(json = json_decode(json=jsond​ecode(res, true);
-        if (!(json[′ok′]??false))errorlog("TELEGRAMAPIERR[json['ok'] ?? false)) error_log("TELEGRAM API ERR [json[′ok′]??false))errorl​og("TELEGRAMAPIERR[method]: " . $res);
+        $json = json_decode($res, true);
+
+        if (!($json['ok'] ?? false)) {
+            error_log("TELEGRAM API ERR [{$method}]: {$res}");
+        }
+
         return $json;
     }
 
-    public static function sendMessage(int chatId,stringchatId, stringchatId,stringtext, ?array $keyboard = null): void
+    public static function sendMessage(int $chatId, string $text, ?array $keyboard = null): void
     {
-        p=[′chatid′=>p = ['chat_id' =>p=[′chati​d′=>chatId, 'text' => $text, 'parse_mode' => 'HTML'];
-        if (keyboard)keyboard)keyboard)p['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE);
+        $p = [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+        ];
+
+        if ($keyboard) {
+            $p['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE);
+        }
+
         self::api('sendMessage', $p);
     }
 
-    public static function editMessage(int chatId,intchatId, intchatId,intmsgId, string text,?arraytext, ?arraytext,?arraykeyboard = null): void
+    public static function editMessage(int $chatId, int $msgId, string $text, ?array $keyboard = null): void
     {
-        p=[′chatid′=>p = ['chat_id' =>p=[′chati​d′=>chatId, 'message_id' => msgId,′text′=>msgId, 'text' =>msgId,′text′=>text, 'parse_mode' => 'HTML'];
-        if (keyboard)keyboard)keyboard)p['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE);
-        r=self::api(′editMessageText′,r = self::api('editMessageText',r=self::api(′editMessageText′,p);
-        // «پیام تغییری نکرد» خطای غیرمهمه — بقیه رو به‌صورت پیام جدید بفرست
-        if (!(r['ok'] ?? false) && str_contains(r['description'] ?? '', 'not modified')) return;
+        $p = [
+            'chat_id' => $chatId,
+            'message_id' => $msgId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+        ];
+
+        if ($keyboard) {
+            $p['reply_markup'] = json_encode($keyboard, JSON_UNESCAPED_UNICODE);
+        }
+
+        $r = self::api('editMessageText', $p);
+
+        // "پیام تغییری نکرد" خطای غیرمهمه — بقیه رو به‌صورت پیام جدید بفرست
+        if (!(($r['ok'] ?? false)) && str_contains($r['description'] ?? '', 'not modified')) {
+            return;
+        }
     }
 
-    public static function answerCallback(string id,stringid, stringid,stringtext = ''): void
+    public static function answerCallback(string $id, string $text = ''): void
     {
-        self::api('answerCallbackQuery', ['callback_query_id' => id,′text′=>id, 'text' =>id,′text′=>text]);
+        self::api('answerCallbackQuery', [
+            'callback_query_id' => $id,
+            'text' => $text,
+        ]);
     }
 
-    public static function btn(string text,stringtext, stringtext,stringdata): array
+    public static function btn(string $text, string $data): array
     {
-        return ['text' => text,′callbackdata′=>text, 'callback_data' =>text,′callbackd​ata′=>data];
+        return [
+            'text' => $text,
+            'callback_data' => $data,
+        ];
     }
 
     public static function kb(array $rows): array
