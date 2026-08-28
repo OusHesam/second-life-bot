@@ -92,3 +92,6 @@ final class AssetHandler implements Handler
             Telegram::kb($rows));
     }
 }
+
+// در AssetHandler:
+public function showPublic(int msgId,arraymsgId, arraymsgId,arrayuser, int chatId,stringchatId, stringchatId,stringkind): void this−>show(this->show(this−>show(msgId, user,user,user,chatId, $kind); }

@@ -121,3 +121,5 @@ final class BusinessHandler implements Handler
             Telegram::kb($rows));
     }
 }
+// در BusinessHandler:
+public function menuPublic(int msgId,arraymsgId, arraymsgId,arrayuser, int chatId): void {this->menu(msgId,msgId,msgId,user, $chatId); }
