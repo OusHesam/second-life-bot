@@ -9,117 +9,152 @@ final class BusinessHandler implements Handler
 {
     public function handle(array $update): bool
     {
-        cb=cb =cb=update['callback_query'] ?? null;
-        if (!$cb) return false;
-        data=data =data=cb['data'];
-        if (!str_starts_with(data, 'biz:') && !str_starts_with(data, 'bzname:')) return false;
+        $cb = $update['callback_query'] ?? null;
+        if (!$cb) {
+            return false;
+        }
+
+        $data = $cb['data'];
+        if (!str_starts_with($data, 'biz:') && !str_starts_with($data, 'bzname:')) {
+            return false;
+        }
 
         Telegram::answerCallback($cb['id']);
-        chatId=(int)chatId = (int)chatId=(int)cb['message']['chat']['id'];
-        msgId=(int)msgId  = (int)msgId=(int)cb['message']['message_id'];
-        user=PlayerService::findByTg(user   = PlayerService::findByTg(user=PlayerService::findByTg(chatId);
-        if (!user∣∣user ||user∣∣user['banned']) return true;
+        $chatId = (int)$cb['message']['chat']['id'];
+        $msgId = (int)$cb['message']['message_id'];
+        $user = PlayerService::findByTg($chatId);
 
-        if (data === 'biz:menu') {this->menu(msgId,msgId,msgId,user, $chatId); return true; }
+        if (!$user || $user['banned']) {
+            return true;
+        }
 
-        parts=explode(′:′,parts = explode(':',parts=explode(′:′,data);
+        if ($data === 'biz:menu') {
+            $this->menu($msgId, $user, $chatId);
+            return true;
+        }
 
-        // مرحله انتخاب دسته → بعد اسم با state
+        $parts = explode(':', $data);
+
         if (str_starts_with($data, 'biz:create:')) {
-            cat=cat =cat=parts[2];
-            c=BusinessService::CATEGORIES[c = BusinessService::CATEGORIES[c=BusinessService::CATEGORIES[cat] ?? null;
-            if (!c∣∣c ||c∣∣user['level'] < $c['min_level']) {
+            $cat = $parts[2];
+            $c = BusinessService::CATEGORIES[$cat] ?? null;
+
+            if (!$c || $user['level'] < $c['min_level']) {
                 Telegram::sendMessage($chatId, "🔒 سطح دسترسی کافی نیست.");
                 return true;
             }
-            // state = در انتظار اسم
+
             DB::pdo()->prepare("UPDATE users SET state = ? WHERE id = ?")->execute([
-                json_encode(['step' => 'biz_name', 'cat' => cat],JSONUNESCAPEDUNICODE),cat], JSON_UNESCAPED_UNICODE),cat],JSONU​NESCAPEDU​NICODE),user['id']
+                json_encode(['step' => 'biz_name', 'cat' => $cat], JSON_UNESCAPED_UNICODE),
+                $user['id']
             ]);
+
             Telegram::sendMessage($chatId, "🏷 اسم کسب‌وکارت رو بنویس (حداکثر ۲۵ حرف):");
             return true;
         }
 
-        // تأیید اسم — از پیام متنی، در StartHandler نیست چون state خاصه
-        if ($parts[0] === 'bzname') return true; // handled via state in Router — see note below
-
-        biz=BusinessService::getMyBusiness((int)biz = BusinessService::getMyBusiness((int)biz=BusinessService::getMyBusiness((int)user['id']);
-        if (!biz && in_array(parts[1] ?? '', ['collect', 'upgrade', 'ad', 'sell'])) {
+        $biz = BusinessService::getMyBusiness((int)$user['id']);
+        if (!$biz && in_array($parts[1] ?? '', ['collect', 'upgrade', 'ad', 'sell'])) {
             Telegram::sendMessage($chatId, "❌ کسب‌وکاری نداری.");
             return true;
         }
 
         try {
             match ($parts[1] ?? '') {
-                'collect' => (function() use (&biz,biz,biz,user, biz,biz,biz,chatId) {
-                    r=BusinessService::collectIncome(r = BusinessService::collectIncome(r=BusinessService::collectIncome(user, $biz);
-                    if ($r['amount'] > 0) {
-                        Telegram::sendMessage(chatId,"📈<b>درآمدجمعشد!</b>\n💰+".numberformat(chatId, "📈 <b>درآمد جمع شد!</b>\n💰 +" . number_format(chatId,"📈<b>درآمدجمعشد!</b>\n💰+".numberf​ormat(r['amount']) . " دلار");
-                        foreach (MissionService::progress(user,′earnedtotal′,user, 'earned_total',user,′earnedt​otal′,r['amount']) as m)Telegram::sendMessage(m) Telegram::sendMessage(m)Telegram::sendMessage(chatId, $m);
-                    } else {
-                        h=(int)ceil(h = (int)ceil(h=(int)ceil(r['wait'] / 3600);
-                        Telegram::sendMessage(chatId,"⏳هنوزدیررسیده.حدودchatId, "⏳ هنوز دیر رسیده. حدودchatId,"⏳هنوزدیررسیده.حدودh ساعت دیگه.");
-                    }
-                })(),
-                'upgrade' => (function() use (user,user,user,biz, $chatId) {
-                    cost=BusinessService::upgrade(cost = BusinessService::upgrade(cost=BusinessService::upgrade(user, $biz);
-                    Telegram::sendMessage(chatId,"⬆®ارتقاخورد!\n💸".numberformat(chatId, "⬆️ ارتقا خورد!\n💸 " . number_format(chatId,"⬆R◯ارتقاخورد!\n💸".numberf​ormat(cost) . " دلار خرج شد.");
-                    foreach (MissionService::progress(user,′bizupgrades′,1)asuser, 'biz_upgrades', 1) asuser,′bizu​pgrades′,1)asm) Telegram::sendMessage(chatId,chatId,chatId,m);
-                })(),
-                'ad' => (function() use (user,user,user,biz, $chatId) {
-                    cost=BusinessService::advertise(cost = BusinessService::advertise(cost=BusinessService::advertise(user, $biz);
-                    Telegram::sendMessage(chatId,"📣تبلیغشد!\n💸".numberformat(chatId, "📣 تبلیغ شد!\n💸 " . number_format(chatId,"📣تبلیغشد!\n💸".numberf​ormat(cost) . " دلار | شهرت کسب‌وکار رفت بالا.");
-                })(),
-                'sell' => (function() use (user,user,user,biz, $chatId) {
-                    value=BusinessService::sell(value = BusinessService::sell(value=BusinessService::sell(user, $biz);
-                    Telegram::sendMessage(chatId,"🤝فروشت!".numberformat(chatId, "🤝 فروشت! " . number_format(chatId,"🤝فروشت!".numberf​ormat(value) . " دلار گرم دستت.");
-                })(),
+                'collect' => $this->collectIncome($user, $biz, $chatId),
+                'upgrade' => $this->upgrade($user, $biz, $chatId),
+                'ad' => $this->advertise($user, $biz, $chatId),
+                'sell' => $this->sellBusiness($user, $biz, $chatId),
                 default => null,
             };
         } catch (\Throwable $e) {
-            Telegram::sendMessage(chatId,chatId,chatId,e->getMessage() === 'not_enough_money'
-                ? Messages::get('not_enough_money') : "⚠️ " . $e->getMessage());
+            Telegram::sendMessage($chatId, $e->getMessage() === 'not_enough_money'
+                ? Messages::get('not_enough_money')
+                : "⚠️ " . $e->getMessage());
         }
 
-        fresh=PlayerService::findByTg(fresh = PlayerService::findByTg(fresh=PlayerService::findByTg(chatId);
-        foreach (AchievementService::check(fresh,null)asfresh, null) asfresh,null)asa) {
-            Telegram::sendMessage(chatId, "{a['emoji']} <b>دستاورد باز شد: {a['name']}</b>\n💰 +{a['reward']} دلار");
+        $fresh = PlayerService::findByTg($chatId);
+        foreach (AchievementService::check($fresh, null) as $a) {
+            Telegram::sendMessage($chatId, "{$a['emoji']} <b>دستاورد باز شد: {$a['name']}</b>\n💰 +{$a['reward']} دلار");
         }
-        this−>menu(this->menu(this−>menu(msgId, fresh,fresh,fresh,chatId);
+
+        $this->menu($msgId, $fresh, $chatId);
         return true;
     }
 
-    private function menu(int msgId,arraymsgId, arraymsgId,arrayuser, int $chatId): void
+    private function collectIncome(array $user, array $biz, int $chatId): void
     {
-        biz=BusinessService::getMyBusiness((int)biz = BusinessService::getMyBusiness((int)biz=BusinessService::getMyBusiness((int)user['id']);
+        $r = BusinessService::collectIncome($user, $biz);
+        if ($r['amount'] > 0) {
+            Telegram::sendMessage($chatId, "📈 <b>درآمد جمع شد!</b>\n💰 +" . number_format($r['amount']) . " دلار");
+            foreach (MissionService::progress($user, 'earned_total', $r['amount']) as $m) {
+                Telegram::sendMessage($chatId, $m);
+            }
+        } else {
+            $h = (int)ceil($r['wait'] / 3600);
+            Telegram::sendMessage($chatId, "⏳ هنوز دیر رسیده. حدود {$h} ساعت دیگه!");
+        }
+    }
+
+    private function upgrade(array $user, array $biz, int $chatId): void
+    {
+        $cost = BusinessService::upgrade($user, $biz);
+        Telegram::sendMessage($chatId, "⬆️ ارتقا خورد!\n💸 " . number_format($cost) . " دلار");
+        foreach (MissionService::progress($user, 'biz_upgrades', 1) as $m) {
+            Telegram::sendMessage($chatId, $m);
+        }
+    }
+
+    private function advertise(array $user, array $biz, int $chatId): void
+    {
+        $cost = BusinessService::advertise($user, $biz);
+        Telegram::sendMessage($chatId, "📣 تبلیغ شد!\n💸 " . number_format($cost) . " دلار");
+    }
+
+    private function sellBusiness(array $user, array $biz, int $chatId): void
+    {
+        $value = BusinessService::sell($user, $biz);
+        Telegram::sendMessage($chatId, "🤝 فروشت! " . number_format($value) . " دلار گرم دست گرفتی! 💵");
+    }
+
+    public function menu(int $msgId, array $user, int $chatId): void
+    {
+        $biz = BusinessService::getMyBusiness((int)$user['id']);
+
         if (!$biz) {
             $rows = [];
-            foreach (BusinessService::CATEGORIES as key=>key =>key=>c) {
-                locked=locked =locked=user['level'] < $c['min_level'];
-                label=label =label=locked ? "🔒 {c['name']}" : "{c['emoji']} {c['name']} — " . number_format(c['cost']) . "$";
-                rows[]=[Telegram::btn(rows[] = [Telegram::btn(rows[]=[Telegram::btn(label, locked?′shop:locked′:"biz:create:locked ? 'shop:locked' : "biz:create:locked?′shop:locked′:"biz:create:key")];
+            foreach (BusinessService::CATEGORIES as $key => $c) {
+                $locked = $user['level'] < $c['min_level'];
+                $label = $locked ? "🔒 {$c['name']}" : "{$c['emoji']} {$c['name']} — " . number_format($c['cost']) . "$";
+                $rows[] = [Telegram::btn($label, $locked ? 'shop:locked' : "biz:create:{$key}")];
             }
             $rows[] = [Telegram::btn('⬅️ بازگشت', 'menu:home')];
-            Telegram::editMessage(chatId,chatId,chatId,msgId,
+
+            Telegram::editMessage($chatId, $msgId,
                 "🏢 <b>کسب‌وکار</b>\n\nیکی رو انتخاب کن:\n(درآمد هر ۸ ساعت قابل جمع‌آوریه)",
                 Telegram::kb($rows));
             return;
         }
-        c=BusinessService::CATEGORIES[c = BusinessService::CATEGORIES[c=BusinessService::CATEGORIES[biz['category']];
+
+        $c = BusinessService::CATEGORIES[$biz['category']];
         $rows = [
             [Telegram::btn('💰 جمع‌آوری درآمد', 'biz:collect')],
             [Telegram::btn('⬆️ ارتقا', 'biz:upgrade'), Telegram::btn('📣 تبلیغات', 'biz:ad')],
             [Telegram::btn('💸 فروش کسب‌وکار', 'biz:sell')],
             [Telegram::btn('⬅️ بازگشت', 'menu:home')],
         ];
-        Telegram::editMessage(chatId,chatId,chatId,msgId,
-            "{c['emoji']} <b>{biz['name']}</b>\n\n" .
+
+        Telegram::editMessage($chatId, $msgId,
+            "{$c['emoji']} <b>{$biz['name']}</b>\n\n" .
             "📈 لول: {$biz['level']}\n" .
             "🔥 شهرت: {$biz['reputation']}/100\n" .
             "👷 کارکنان: {$biz['employees']}\n" .
-            "💵 درآمد هر ۸ ساعت: ~" . number_format((int)(c[′baserev′]∗c['base_rev'] *c[′baser​ev′]∗biz['level'])) . " دلار",
+            "💵 درآمد هر ۸ ساعت: ~" . number_format((int)($c['base_rev'] * $biz['level'])) . " دلار",
             Telegram::kb($rows));
     }
+
+    public function menuPublic(int $msgId, array $user, int $chatId): void
+    {
+        $this->menu($msgId, $user, $chatId);
+    }
 }
-// در BusinessHandler:
-public function menuPublic(int msgId,arraymsgId, arraymsgId,arrayuser, int chatId): void {this->menu(msgId,msgId,msgId,user, $chatId); }

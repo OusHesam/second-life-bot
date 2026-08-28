@@ -9,17 +9,21 @@ final class EventHandler implements Handler
 {
     public function handle(array $update): bool
     {
-        cb=cb =cb=update['callback_query'] ?? null;
-        if (!cb∣∣!strstartswith(cb || !str_starts_with(cb∣∣!strs​tartsw​ith(cb['data'], 'evt:')) return false;
+        $cb = $update['callback_query'] ?? null;
+        if (!$cb || !str_starts_with($cb['data'], 'evt:')) {
+            return false;
+        }
 
         Telegram::answerCallback($cb['id']);
-        chatId=(int)chatId = (int)chatId=(int)cb['message']['chat']['id'];
-        user=PlayerService::findByTg(user = PlayerService::findByTg(user=PlayerService::findByTg(chatId);
-        if (!user∣∣user ||user∣∣user['banned']) return true;
+        $chatId = (int)$cb['message']['chat']['id'];
+        $user = PlayerService::findByTg($chatId);
 
-        [, eventKey,eventKey,eventKey,optKey] = explode(':', $cb['data']);
-        (new EventService())->resolve(user,user,user,eventKey, $optKey);
+        if (!$user || $user['banned']) {
+            return true;
+        }
+
+        [, $eventKey, $optKey] = explode(':', $cb['data']);
+        (new EventService())->resolve($user, $eventKey, $optKey);
         return true;
     }
 }
-
