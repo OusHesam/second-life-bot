@@ -1,0 +1,5 @@
+.env
+/data/*.sqlite
+/data/*.sqlite-*
+/data/*.log
+/vendor/
